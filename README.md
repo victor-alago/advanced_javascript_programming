@@ -5,7 +5,7 @@
 
 To test the code, simply run it in a Node.js environment with:
 ```js
-npm start
+node exercise1.js
 ```
 
 
