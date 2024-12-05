@@ -1,15 +1,20 @@
 const express = require('express');
-const Database = require('./infrastructure/Database');
+const connectDB = require('./infrastructure/Database');
 
-// Services
+// Import Services
 const BookService = require('./domain/Books/BookService');
 const UserService = require('./domain/Users/UserService');
 const AudioService = require('./domain/Audio/AudioService');
+const AuthService = require('./domain/Auth/AuthService');
+const SearchService = require('./domain/Search/SearchService');
 
-// Routes
+// Import Routes
 const BookRoutes = require('./routes/BookRoutes');
 const UserRoutes = require('./routes/UserRoutes');
 const AudioRoutes = require('./routes/AudioRoutes');
+const AuthRoutes = require('./routes/AuthRoutes');
+const SearchRoutes = require('./routes/SearchRoutes');
+
 
 // Middleware
 const AuthMiddleware = require('./middleware/AuthMiddleware');
@@ -19,10 +24,16 @@ const ErrorMiddleware = require('./middleware/ErrorMiddleware');
 const app = express();
 const port = 3000;
 
-const db = new Database();
-const bookService = new BookService(db);
-const userService = new UserService(db);
-const audioService = new AudioService(db);
+// Connect to MongoDB
+connectDB();
+
+
+// services
+const bookService = new BookService();
+const userService = new UserService();
+const audioService = new AudioService();
+const authService = new AuthService(userService);
+const searchService = new SearchService(bookService, audioService);
 
 app.use(express.json());
 
@@ -30,9 +41,12 @@ app.use(express.json());
 app.use(LoggerMiddleware);
 
 // Routes with AuthMiddleware
-app.use('/books', AuthMiddleware, BookRoutes(bookService));
-app.use('/users', AuthMiddleware, UserRoutes(userService));
-app.use('/audio', AuthMiddleware, AudioRoutes(audioService));
+app.use('/books', AuthMiddleware.authenticateToken, BookRoutes(bookService));
+app.use('/users', AuthMiddleware.authenticateToken, UserRoutes(userService));
+app.use('/audio', AuthMiddleware.authenticateToken, AudioRoutes(audioService));
+app.use('/auth', AuthRoutes(authService, userService));
+app.use('/search', SearchRoutes(searchService));
+
 
 // Error handling middleware
 app.use(ErrorMiddleware);

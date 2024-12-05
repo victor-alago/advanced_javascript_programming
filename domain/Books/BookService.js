@@ -1,34 +1,47 @@
+const Book = require('./Book');
+
 class BookService {
-    constructor(db) {
-        this.db = db;
+    async getAllBooks() {
+        return await Book.find();
     }
 
-    getAllBooks() {
-        return this.db.read().books;
+    async getBookById(id) {
+        return await Book.findById(id);
     }
 
-    getBookById(id) {
-        return this.getAllBooks().find(book => book.id === id);
+    async addBook(data) {
+        const book = new Book(data);
+        await book.save();
+        return book;
     }
 
-    addBook(book) {
-        const db = this.db.read();
-        const newId = db.books.length > 0 ? db.books[db.books.length - 1].id + 1 : 1;
-        const newBook = { id: newId, ...book };
-        db.books.push(newBook);
-        this.db.write(db);
-        return newBook;
-    }
-
-    deleteBook(id) {
-        const db = this.db.read();
-        const index = db.books.findIndex(book => book.id === id);
-        if (index !== -1) {
-            const deleted = db.books.splice(index, 1);
-            this.db.write(db);
-            return deleted[0];
+    async updateBook(id, data) {
+        const updatedBook = await Book.findByIdAndUpdate(id, data, { new: true });
+        if (!updatedBook) {
+            throw new Error('Book not found');
         }
-        return null;
+        return updatedBook;
+    }
+
+    async deleteBook(id) {
+        const deletedBook = await Book.findByIdAndDelete(id);
+        if (!deletedBook) {
+            throw new Error('Book not found');
+        }
+        return deletedBook;
+    }
+
+    // searchBooks function, later added to the SearchService
+    async searchBooks(filters) {
+        const { title, author, year } = filters;
+        const query = {};
+
+        // Add filters dynamically
+        if (title) query.title = { $regex: title, $options: 'i' }; // Case-insensitive regex
+        if (author) query.author = { $regex: author, $options: 'i' };
+        if (year) query.year = year;
+
+        return await Book.find(query); // Query MongoDB
     }
 }
 

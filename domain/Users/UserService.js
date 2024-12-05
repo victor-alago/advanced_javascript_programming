@@ -1,23 +1,44 @@
+const User = require('./User');
+const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+
 class UserService {
-    constructor(db) {
-        this.db = db;
+    async getUserByEmail(email) {
+        return await User.findOne({ email });
     }
 
-    getAllUsers() {
-        return this.db.read().users;
+    async getUserProfile(userId) {
+        // Validate the ID
+        if (!mongoose.isValidObjectId(userId)) {
+            console.error('Invalid User ID:', userId); // Debugging
+            throw new Error('Invalid User ID');
+        }
+
+        // Fetch the user by ID
+        const user = await User.findById(userId);
+        if (!user) {
+            console.error('User not found:', userId); // Debugging
+            throw new Error('User not found');
+        }
+
+        // Return only necessary fields
+        return {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+        };
     }
 
-    getUserById(id) {
-        return this.db.read().users.find(user => user.id === id);
-    }
-    
-    addUser(user) {
-        const db = this.db.read();
-        const newId = db.users.length > 0 ? db.users[db.users.length - 1].id + 1 : 1;
-        const newUser = { id: newId, ...user };
-        db.users.push(newUser);
-        this.db.write(db);
-        return newUser;
+    async updateUserProfile(userId, updatedData) {
+        const user = await User.findByIdAndUpdate(userId, updatedData, { new: true });
+        if (!user) {
+            throw new Error('User not found');
+        }
+        return {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+        };
     }
 }
 

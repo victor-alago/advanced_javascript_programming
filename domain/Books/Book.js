@@ -1,10 +1,9 @@
-class Book {
-    constructor(id, title, author, year) {
-        this.id = id;
-        this.title = title;
-        this.author = author;
-        this.year = year;
-    }
-}
+const mongoose = require('mongoose');
 
-module.exports = Book;
+const BookSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    author: { type: String, required: true },
+    year: { type: Number, required: true }
+});
+
+module.exports = mongoose.model('Book', BookSchema);

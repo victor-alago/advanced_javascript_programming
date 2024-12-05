@@ -1,23 +1,54 @@
+const Audio = require('./Audio');
+
 class AudioService {
-    constructor(db) {
-        this.db = db;
+    async getAllAudio() {
+        // Fetch all audio records, populating the book details
+        return await Audio.find().populate('bookId');
     }
 
-    getAllAudio() {
-        return this.db.read().audio;
+    async getAudioById(id) {
+        // Fetch a specific audio record by ID
+        const audio = await Audio.findById(id).populate('bookId');
+        if (!audio) {
+            throw new Error('Audio not found');
+        }
+        return audio;
     }
 
-    getAudioById(id) {
-        return this.db.read().audio.find(audio => audio.id === id);
+    async addAudio(audioData) {
+        // Add a new audio record
+        const audio = new Audio(audioData);
+        await audio.save();
+        return audio;
     }
 
-    addAudio(audio) {
-        const db = this.db.read();
-        const newId = db.audio.length > 0 ? db.audio[db.audio.length - 1].id + 1 : 1;
-        const newAudio = { id: newId, ...audio };
-        db.audio.push(newAudio);
-        this.db.write(db);
-        return newAudio;
+    async updateAudio(id, audioData) {
+        // Update an existing audio record
+        const updatedAudio = await Audio.findByIdAndUpdate(id, audioData, { new: true });
+        if (!updatedAudio) {
+            throw new Error('Audio not found');
+        }
+        return updatedAudio;
+    }
+
+    async deleteAudio(id) {
+        // Delete an audio record
+        const deletedAudio = await Audio.findByIdAndDelete(id);
+        if (!deletedAudio) {
+            throw new Error('Audio not found');
+        }
+        return deletedAudio;
+    }
+
+    // searchAudio function, later added to the SearchService
+    async searchAudio(filters) {
+        const { narrator, bookId } = filters;
+        const query = {};
+
+        if (narrator) query.narrator = { $regex: narrator, $options: 'i' }; // Case-insensitive regex
+        if (bookId) query.bookId = bookId;
+
+        return await Audio.find(query).populate('bookId'); // Query MongoDB and populate book details
     }
 }
 
